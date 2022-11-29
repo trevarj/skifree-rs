@@ -1,0 +1,17 @@
+[package]
+name = "skifree-rs"
+version = "0.1.0"
+edition = "2021"
+authors = ["Trevor Arjeski <tmarjeski@gmail.com>"]
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[profile.dev]
+opt-level = 1
+
+[dependencies]
+anyhow = "1"
+ggez = "0.8.1"
+
+[build-dependencies]
+quote = "1"
+ggez = "0.8.1"
