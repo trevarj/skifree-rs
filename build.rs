@@ -58,9 +58,9 @@ fn visit_dir(path: &Path) -> (String, TokenStream) {
                 .trim_start_matches("assets")
                 .to_string();
 
-            fields.push(quote! { pub #field_name : ggez::graphics::Image });
+            fields.push(quote! { pub #field_name : std::rc::Rc<ggez::graphics::Image> });
             field_constructors
-                .push(quote! { #field_name: ggez::graphics::Image::from_path(ctx, #image_path)? })
+                .push(quote! { #field_name: std::rc::Rc::new(ggez::graphics::Image::from_path(ctx, #image_path)?) })
         }
     }
     let struct_type = capitalize_first(&path.file_name().unwrap().to_string_lossy());

@@ -11,23 +11,33 @@ use ggez::winit::event::VirtualKeyCode;
 use ggez::{Context, ContextBuilder, GameResult};
 
 use crate::assets::Assets;
+use crate::map::Map;
+use crate::player::Player;
 
 mod assets;
 mod map;
 mod player;
+mod util;
 
 const WINDOW_WIDTH: f32 = 480.;
 const WINDOW_HEIGHT: f32 = 640.;
 
 struct SkiFree {
     assets: Assets,
+    map: Map,
+    player: Player,
 }
 
 impl SkiFree {
     pub fn new(ctx: &mut Context) -> GameResult<Self> {
         // Load/create resources such as images here.
+        let assets = Assets::new(ctx)?;
+        let map = Map::new(&assets);
+        let player = Player::new();
         Ok(Self {
-            assets: Assets::new(ctx)?,
+            assets,
+            map,
+            player,
         })
     }
 }
@@ -42,6 +52,9 @@ impl EventHandler for SkiFree {
         let mut canvas = Canvas::from_frame(ctx, Color::WHITE);
 
         // Draw code here...
+        self.map.draw(&mut canvas);
+        self.player.draw(&self.assets, &mut canvas);
+
         canvas.finish(ctx)?;
 
         ggez::timer::yield_now();
@@ -54,9 +67,25 @@ impl EventHandler for SkiFree {
         input: KeyInput,
         _repeated: bool,
     ) -> GameResult {
-        if input.keycode == Some(VirtualKeyCode::Escape) || input.keycode == Some(VirtualKeyCode::Q)
-        {
-            ctx.request_quit();
+        if let Some(keycode) = input.keycode {
+            match keycode {
+                VirtualKeyCode::Escape | VirtualKeyCode::Q => ctx.request_quit(),
+                VirtualKeyCode::Left => self.player.left(),
+                VirtualKeyCode::Right => self.player.right(),
+                _ => {}
+            }
+        }
+        Ok(())
+    }
+
+    /// A keyboard button was released.
+    fn key_up_event(&mut self, _ctx: &mut Context, input: KeyInput) -> GameResult {
+        if let Some(keycode) = input.keycode {
+            match keycode {
+                VirtualKeyCode::Left => self.player.slide_left(),
+                VirtualKeyCode::Right => self.player.slide_right(),
+                _ => {}
+            }
         }
         Ok(())
     }

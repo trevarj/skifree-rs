@@ -2177,6 +2177,7 @@ dependencies = [
  "anyhow",
  "ggez",
  "quote",
+ "rand",
 ]
 
 [[package]]
