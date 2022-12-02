@@ -40,11 +40,26 @@ impl SkiFree {
             player,
         })
     }
+
+    fn handle_collisions(&mut self) {
+        if let Some(action) = self.map.check_collision() {
+            self.player.collision(action);
+        }
+    }
 }
 
 impl EventHandler for SkiFree {
-    fn update(&mut self, _ctx: &mut Context) -> GameResult {
-        // Update code here...
+    fn update(&mut self, ctx: &mut Context) -> GameResult {
+        const DESIRED_FPS: u32 = 60;
+
+        while ctx.time.check_update_time(DESIRED_FPS) {
+            let _seconds = 1.0 / (DESIRED_FPS as f32);
+
+            self.handle_collisions();
+            self.map
+                .update(&self.assets, self.player.opposite_direction());
+            self.player.maybe_next_state();
+        }
         Ok(())
     }
 
@@ -61,13 +76,11 @@ impl EventHandler for SkiFree {
         Ok(())
     }
 
-    fn key_down_event(
-        &mut self,
-        ctx: &mut Context,
-        input: KeyInput,
-        _repeated: bool,
-    ) -> GameResult {
+    fn key_down_event(&mut self, ctx: &mut Context, input: KeyInput, repeated: bool) -> GameResult {
         if let Some(keycode) = input.keycode {
+            if repeated {
+                return Ok(());
+            }
             match keycode {
                 VirtualKeyCode::Escape | VirtualKeyCode::Q => ctx.request_quit(),
                 VirtualKeyCode::Left => self.player.left(),
