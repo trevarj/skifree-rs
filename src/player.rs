@@ -3,11 +3,18 @@ use std::f32::consts::PI;
 use ggez::graphics::{Canvas, DrawParam};
 
 use crate::assets::Assets;
-use crate::map::CollisionAction;
 
 #[derive(Debug)]
 pub struct Player {
     state: PlayerState,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum CollisionAction {
+    Nothing,
+    Fall,
+    JumpSmall,
+    JumpLarge,
 }
 
 impl Player {

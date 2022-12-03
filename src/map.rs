@@ -1,79 +1,48 @@
 use std::rc::Rc;
 
 use ggez::glam::Vec2;
-use ggez::graphics::{Canvas, DrawParam, Image};
+use ggez::graphics::{Canvas, Image};
 use ggez::mint::Point2;
 use rand::rngs::OsRng;
 use rand::Rng;
 
 use crate::assets::Assets;
-use crate::player::Player;
+use crate::map::objects::Object;
+use crate::player::{CollisionAction, Player};
 use crate::util::vec_from_angle;
 
 const LIFT_X_POS: f32 = 100.;
 
+mod objects;
+
 pub struct Map {
-    immovable_objects: Vec<ImmovableObject>,
+    objects: Vec<Object>,
     rng: OsRng,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum CollisionAction {
-    Nothing,
-    Fall,
-    JumpSmall,
-    JumpLarge,
-}
-
-struct ImmovableObject {
-    position: Point2<f32>,
-    image: Rc<Image>,
-    /// What happens when a player hits this object
-    collision_action: CollisionAction,
-}
-
-impl ImmovableObject {
-    fn new(position: Point2<f32>, image: &Rc<Image>, collision_action: CollisionAction) -> Self {
-        Self {
-            position,
-            image: image.clone(),
-            collision_action,
-        }
-    }
-
-    fn shift(&mut self, direction: f32) {
-        let mut pos: Vec2 = self.position.into();
-        let v2 = vec_from_angle(direction);
-        pos += v2 * 3.; // TODO: change speed
-        self.position = pos.into();
-    }
 }
 
 impl Map {
     pub fn new(assets: &Assets) -> Self {
         let mut rng = OsRng::default();
-        let mut immovable_objects = vec![
-            ImmovableObject::new(
+        let mut objects = vec![
+            Object::immovable(
                 [LIFT_X_POS, 100.].into(),
                 &assets.objects.lift,
                 CollisionAction::Fall,
             ),
-            ImmovableObject::new(
+            Object::movable(
                 [LIFT_X_POS, 140.].into(),
                 &assets.objects.chairlift,
                 CollisionAction::Nothing,
+                |o| o.position.y -= 0.2,
             ),
         ];
-        immovable_objects.extend(start_signs(assets).into_iter());
-        immovable_objects.extend(freestyle_course(assets, &mut rng));
-        Self {
-            immovable_objects,
-            rng,
-        }
+        objects.extend(start_signs(assets).into_iter());
+        objects.extend(freestyle_course(assets, &mut rng));
+        Self { objects, rng }
     }
 
     pub fn check_collision(&self) -> Option<CollisionAction> {
-        self.immovable_objects.iter().find_map(|o| {
+        self.objects.iter().find_map(|o| {
             let pdistance = Vec2::from(o.position) - Vec2::from(Player::POSITION);
             if pdistance.length() < 20. {
                 // TODO: idk what this val should be
@@ -86,14 +55,17 @@ impl Map {
 
     pub fn update(&mut self, _assets: &Assets, movement_direction: Option<f32>) {
         // move everything in relation to the given movement_direction
-        self.immovable_objects.iter_mut().for_each(|o| {
-            if let Some(direction) = movement_direction {
-                o.shift(direction)
+        self.objects.retain_mut(|o| {
+            if o.position.y < -50. {
+                return false;
+            } else if let Some(direction) = movement_direction {
+                o.shift(direction);
             }
+            o.apply_movement();
+            true
         });
 
         // call generators
-        // move everything in a certain `direction`
 
         // check which objects need to be cleared (off top of screen)
 
@@ -106,20 +78,20 @@ impl Map {
     }
 
     pub fn draw(&self, canvas: &mut Canvas) {
-        for o in &self.immovable_objects {
+        for o in &self.objects {
             canvas.draw(o.image.as_ref(), o.position);
         }
     }
 
     /// Generates new random immovable objects
-    fn generate_immovables(&mut self) {
+    fn generate_objects(&mut self) {
         // for trees, rocks, bumps, lifts, etc
         // generate random coord
         // choose random object
     }
 }
 
-fn start_signs(assets: &Assets) -> [ImmovableObject; 3] {
+fn start_signs(assets: &Assets) -> [Object; 3] {
     let slalom = &assets.objects.slalom;
     let freestyle = &assets.objects.freestyle;
     let tree_slalom = &assets.objects.tree_slalom;
@@ -131,13 +103,13 @@ fn start_signs(assets: &Assets) -> [ImmovableObject; 3] {
     let freestyle_xy = [slalom_xy[0] + spacing + slalom.width() as f32, y];
     let tree_slalom_xy = [freestyle_xy[0] + spacing + freestyle.width() as f32, y];
     [
-        ImmovableObject::new(slalom_xy.into(), slalom, CollisionAction::Fall),
-        ImmovableObject::new(freestyle_xy.into(), freestyle, CollisionAction::Fall),
-        ImmovableObject::new(tree_slalom_xy.into(), tree_slalom, CollisionAction::Fall),
+        Object::immovable(slalom_xy.into(), slalom, CollisionAction::Fall),
+        Object::immovable(freestyle_xy.into(), freestyle, CollisionAction::Fall),
+        Object::immovable(tree_slalom_xy.into(), tree_slalom, CollisionAction::Fall),
     ]
 }
 
-fn freestyle_course(assets: &Assets, rng: &mut OsRng) -> Vec<ImmovableObject> {
+fn freestyle_course(assets: &Assets, rng: &mut OsRng) -> Vec<Object> {
     let x_range = 200..400;
     let x_spacing = 40;
 
@@ -155,7 +127,7 @@ fn freestyle_course(assets: &Assets, rng: &mut OsRng) -> Vec<ImmovableObject> {
                     2 => (&assets.objects.ramp, CollisionAction::JumpLarge),
                     _ => continue,
                 };
-                objects.push(ImmovableObject::new([x, y].into(), image, action))
+                objects.push(Object::immovable([x, y].into(), image, action))
             }
         }
     }
