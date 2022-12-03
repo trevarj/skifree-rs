@@ -5,7 +5,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use ggez::conf::{WindowMode, WindowSetup};
 use ggez::event::{self, EventHandler};
-use ggez::graphics::{Canvas, Color};
+use ggez::graphics::{Canvas, Color, Sampler};
 use ggez::input::keyboard::KeyInput;
 use ggez::winit::event::VirtualKeyCode;
 use ggez::{Context, ContextBuilder, GameResult};
@@ -13,6 +13,7 @@ use ggez::{Context, ContextBuilder, GameResult};
 use crate::assets::Assets;
 use crate::map::Map;
 use crate::player::Player;
+use crate::util::vec_from_angle;
 
 mod assets;
 mod map;
@@ -26,6 +27,7 @@ struct SkiFree {
     assets: Assets,
     map: Map,
     player: Player,
+    should_generate: bool,
 }
 
 impl SkiFree {
@@ -38,6 +40,7 @@ impl SkiFree {
             assets,
             map,
             player,
+            should_generate: false,
         })
     }
 
@@ -56,8 +59,9 @@ impl EventHandler for SkiFree {
             let _seconds = 1.0 / (DESIRED_FPS as f32);
 
             self.handle_collisions();
-            self.map
-                .update(&self.assets, self.player.opposite_direction());
+
+            self.map.update(&self.assets, &self.player);
+
             self.player.maybe_next_state();
         }
         Ok(())
@@ -65,6 +69,7 @@ impl EventHandler for SkiFree {
 
     fn draw(&mut self, ctx: &mut Context) -> GameResult {
         let mut canvas = Canvas::from_frame(ctx, Color::WHITE);
+        canvas.set_sampler(Sampler::nearest_clamp());
 
         // Draw code here...
         self.map.draw(&mut canvas);

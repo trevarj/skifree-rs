@@ -20,6 +20,7 @@ pub enum CollisionAction {
 impl Player {
     pub const POSITION: [f32; 2] = [240., 320.];
     pub const HIT_BOX_SIZE: f32 = 20.;
+    pub const PLAYER_SPEED: f32 = 3.;
 
     pub fn new() -> Self {
         Self {
@@ -106,6 +107,26 @@ impl Player {
         canvas.draw(image.as_ref(), DrawParam::default().dest(Self::POSITION));
     }
 
+    pub fn direction(&self) -> Option<f32> {
+        match &self.state {
+            PlayerState::Downward
+            | PlayerState::Flip(_)
+            | PlayerState::Jump(_)
+            | PlayerState::Trick1(_)
+            | PlayerState::Trick2(_) => Some(0.),
+            PlayerState::LeftMove => Some(3. * PI / 2.),
+            PlayerState::RightMove => Some(PI / 2.),
+            PlayerState::Left30 => Some(11. * PI / 6.),
+            PlayerState::Left45 => Some(7. * PI / 4.),
+            PlayerState::Right30 => Some(PI / 6.),
+            PlayerState::Right45 => Some(PI / 4.),
+            PlayerState::LeftStop
+            | PlayerState::RightStop
+            | PlayerState::Fallen(_)
+            | PlayerState::Sitting(_) => None,
+        }
+    }
+
     /// Return the angle in radians which is opposite of the angle that the
     /// player is moving. None if player is not moving
     pub fn opposite_direction(&self) -> Option<f32> {
@@ -175,7 +196,6 @@ impl PlayerState {
     fn next_state(self) -> PlayerState {
         match self {
             PlayerState::Fallen(f) if f > 0 => PlayerState::Fallen(f - 1),
-            PlayerState::Sitting(f) if f > 0 => PlayerState::Sitting(f - 1),
             PlayerState::Sitting(f) if f > 0 => PlayerState::Sitting(f - 1),
             PlayerState::Jump(f) if f > 0 => PlayerState::Jump(f - 1),
             PlayerState::Trick1(f) if f > 0 => PlayerState::Trick1(f - 1),

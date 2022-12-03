@@ -53,10 +53,10 @@ impl Object {
         }
     }
 
-    pub fn shift(&mut self, direction: f32) {
+    pub fn shift(&mut self, direction: f32, magnitude: f32) {
         let mut pos: Vec2 = self.position.into();
         let v2 = vec_from_angle(direction);
-        pos += v2 * 3.; // TODO: change speed
+        pos += v2 * magnitude;
         self.position = pos.into();
     }
 }
