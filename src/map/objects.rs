@@ -5,12 +5,11 @@ use ggez::graphics::{Image, Rect};
 use ggez::mint::Point2;
 
 use crate::player::CollisionAction;
-use crate::util::vec_from_angle;
+use crate::util::vec2_from_angle;
 
 pub struct Object {
     pub position: Point2<f32>,
     pub image: Rc<Image>,
-    /// What happens when a player hits this object
     pub collision_action: CollisionAction,
     movement: Option<fn(&mut Self)>,
 }
@@ -55,7 +54,7 @@ impl Object {
 
     pub fn shift(&mut self, direction: f32, magnitude: f32) {
         let mut pos: Vec2 = self.position.into();
-        let v2 = vec_from_angle(direction);
+        let v2 = vec2_from_angle(direction);
         pos += v2 * magnitude;
         self.position = pos.into();
     }

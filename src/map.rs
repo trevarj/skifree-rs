@@ -1,8 +1,7 @@
 use std::rc::Rc;
 
 use ggez::glam::Vec2;
-use ggez::graphics::{Canvas, Color, DrawParam, Image, Mesh, Rect};
-use ggez::mint::Point2;
+use ggez::graphics::{Canvas, Color, DrawParam, Text};
 use ggez::Context;
 use rand::rngs::OsRng;
 use rand::Rng;
@@ -10,10 +9,19 @@ use rand::Rng;
 use crate::assets::Assets;
 use crate::map::objects::Object;
 use crate::player::{CollisionAction, Player};
-use crate::util::{draw_hitbox, vec_from_angle};
+use crate::util::{draw_hitbox, vec2_from_angle};
 use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
+const MAP_WIDTH: i32 = 3000;
+const MAP_HEIGHT: i32 = 20_000;
+const COURSE_WIDTH: i32 = MAP_WIDTH / 3;
+const COURSE_Y_START: i32 = 500;
+const SLALOM_X_START: i32 = MAP_WIDTH / -2;
+const FREESTYLE_X_START: i32 = SLALOM_X_START + COURSE_WIDTH;
+const TREE_SLALOM_X_START: i32 = FREESTYLE_X_START + COURSE_WIDTH;
+
 const LIFT_X_POS: f32 = 100.;
+const LIFT_Y_START: i32 = 100;
 
 mod objects;
 
@@ -26,21 +34,12 @@ pub struct Map {
 impl Map {
     pub fn new(assets: &Assets) -> Self {
         let mut rng = OsRng::default();
-        let mut objects = vec![
-            Object::immovable(
-                [LIFT_X_POS, 100.].into(),
-                &assets.objects.lift,
-                CollisionAction::Fall,
-            ),
-            Object::movable(
-                [LIFT_X_POS, 140.].into(),
-                &assets.objects.chairlift,
-                CollisionAction::Nothing,
-                |o| o.position.y -= 0.2,
-            ),
-        ];
-        objects.extend(start_signs(assets).into_iter());
+        let mut objects = vec![];
+        objects.extend(starting_objects(assets));
+        objects.extend(slalom_course(assets, &mut rng));
         objects.extend(freestyle_course(assets, &mut rng));
+        objects.extend(tree_slalom_course(assets, &mut rng));
+        objects.extend(ski_lift(assets));
         Self {
             objects,
             rng,
@@ -77,23 +76,8 @@ impl Map {
         });
 
         if let Some(direction) = player.direction() {
-            self.y_distance += vec_from_angle(direction).y;
-
-            // dbg!(self.y_distance);
-            // if (self.y_distance % (WINDOW_HEIGHT / (2. *
-            // PLAYER_SPEED))).trunc() == 0. {     dbg!("half
-            // screen"); }
-
-            // player moved so call generators
-            self.generate_objects(assets, direction);
+            self.y_distance += vec2_from_angle(direction).y;
         }
-
-        // generate for each "section" of the hill:
-        // random left (wilderness),
-        // slalom (flags + moguls),
-        // freestyle (ramps),
-        // tree slalom (lots of trees),
-        // random right (wilderness)
     }
 
     pub fn draw(&self, ctx: &Context, canvas: &mut Canvas) {
@@ -107,35 +91,14 @@ impl Map {
             draw_hitbox(ctx, canvas, o.hitbox());
             canvas.draw(o.image.as_ref(), o.position);
         }
-    }
-
-    /// Generates new random immovable objects
-    fn generate_objects(&mut self, assets: &Assets, direction: f32) {
-        // off-screen where Player is heading
-        let pos = vec_from_angle(direction) * 850.;
-        let start_x = pos.x as i32;
-        let start_y = pos.y as i32;
-        for y in (start_y - 100..start_y + 100).step_by(30).map(|y| y as f32) {
-            for x in (start_x - 100..start_x + 100).step_by(30).map(|x| x as f32) {
-                if self.rng.gen_bool(0.001) {
-                    let (image, action) = match self.rng.gen_range(0..3) {
-                        0 => (&assets.objects.rock, CollisionAction::Fall),
-                        1 => (&assets.objects.stump, CollisionAction::Fall),
-                        2 => (&assets.objects.tree1, CollisionAction::Fall),
-                        _ => continue,
-                    };
-                    self.objects
-                        .push(Object::immovable([x, y].into(), image, action))
-                }
-            }
-        }
-        // for trees, rocks, bumps, lifts, etc
-        // generate random coord
-        // choose random object
+        canvas.draw(
+            &Text::new(format!("distance: {:.0}", self.y_distance)),
+            DrawParam::new().dest([0., 0.]).color(Color::BLACK),
+        );
     }
 }
 
-fn start_signs(assets: &Assets) -> [Object; 14] {
+fn starting_objects(assets: &Assets) -> Vec<Object> {
     let slalom = &assets.objects.slalom;
     let freestyle = &assets.objects.freestyle;
     let tree_slalom = &assets.objects.tree_slalom;
@@ -150,28 +113,49 @@ fn start_signs(assets: &Assets) -> [Object; 14] {
     let freestyle_xy = [slalom_xy[0] + spacing + slalom.width() as f32, y];
     let tree_slalom_xy = [freestyle_xy[0] + spacing + freestyle.width() as f32, y];
     [
-        Object::immovable([250., 210.].into(), btree, CollisionAction::Fall),
-        Object::immovable([410., 210.].into(), btree, CollisionAction::Fall),
-        Object::immovable([290., 210.].into(), btree, CollisionAction::Fall),
-        Object::immovable([330., 210.].into(), btree, CollisionAction::Fall),
-        Object::immovable([370., 210.].into(), btree, CollisionAction::Fall),
-        Object::immovable([270., 220.].into(), btree, CollisionAction::Fall),
-        Object::immovable([310., 220.].into(), btree, CollisionAction::Fall),
-        Object::immovable([350., 220.].into(), btree, CollisionAction::Fall),
-        Object::immovable([390., 220.].into(), btree, CollisionAction::Fall),
-        Object::immovable([230., 250.].into(), xtree, CollisionAction::Fall),
-        Object::immovable([410., 250.].into(), xtree, CollisionAction::Fall),
-        Object::immovable(slalom_xy.into(), slalom, CollisionAction::Fall),
-        Object::immovable(freestyle_xy.into(), freestyle, CollisionAction::Fall),
-        Object::immovable(tree_slalom_xy.into(), tree_slalom, CollisionAction::Fall),
+        ([250., 210.], btree),
+        ([410., 210.], btree),
+        ([290., 210.], btree),
+        ([330., 210.], btree),
+        ([370., 210.], btree),
+        ([270., 220.], btree),
+        ([310., 220.], btree),
+        ([350., 220.], btree),
+        ([390., 220.], btree),
+        ([230., 250.], xtree),
+        ([410., 250.], xtree),
+        (slalom_xy, slalom),
+        (freestyle_xy, freestyle),
+        (tree_slalom_xy, tree_slalom),
     ]
+    .into_iter()
+    .map(|o| Object::immovable(o.0.into(), o.1, CollisionAction::Fall))
+    .collect()
 }
 
-fn freestyle_course(assets: &Assets, rng: &mut OsRng) -> Vec<Object> {
-    let x_range = 200..400;
+fn ski_lift(assets: &Assets) -> Vec<Object> {
+    let mut objects = vec![];
+    for y in (LIFT_Y_START..MAP_HEIGHT).step_by(400).map(|i| i as f32) {
+        objects.push(Object::immovable(
+            [LIFT_X_POS, y].into(),
+            &assets.objects.lift,
+            CollisionAction::Fall,
+        ));
+        objects.push(Object::movable(
+            [LIFT_X_POS, y + 100.].into(),
+            &assets.objects.chairlift,
+            CollisionAction::Nothing,
+            |o| o.position.y -= 0.2,
+        ));
+    }
+    objects
+}
+
+fn slalom_course(assets: &Assets, rng: &mut OsRng) -> Vec<Object> {
+    let x_range = SLALOM_X_START..FREESTYLE_X_START;
     let x_spacing = 40;
 
-    let y_range = 500..4000;
+    let y_range = COURSE_Y_START..MAP_HEIGHT;
     let y_spacing = 100;
     let y_iter = y_range.step_by(y_spacing).map(|y| y as f32);
 
@@ -179,10 +163,75 @@ fn freestyle_course(assets: &Assets, rng: &mut OsRng) -> Vec<Object> {
     for y in y_iter {
         for x in x_range.clone().step_by(x_spacing).map(|x| x as f32) {
             if rng.gen_bool(0.33) {
-                let (image, action) = match rng.gen_range(0..3) {
+                let (image, action) = match rng.gen_range(0..5) {
                     0 => (&assets.objects.bump_l, CollisionAction::JumpSmall),
                     1 => (&assets.objects.bump_s, CollisionAction::JumpSmall),
-                    2 => (&assets.objects.ramp, CollisionAction::JumpLarge),
+                    2 => (&assets.objects.mogul, CollisionAction::JumpSmall),
+                    3 => (&assets.objects.rock, CollisionAction::Fall),
+                    4 => (&assets.objects.tree1, CollisionAction::Fall),
+                    _ => continue,
+                };
+                objects.push(Object::immovable([x, y].into(), image, action))
+            }
+        }
+    }
+    objects
+}
+
+fn freestyle_course(assets: &Assets, rng: &mut OsRng) -> Vec<Object> {
+    let x_range = FREESTYLE_X_START..TREE_SLALOM_X_START;
+    let x_spacing = 40;
+
+    let y_range = COURSE_Y_START..MAP_HEIGHT;
+    let y_spacing = 100;
+    let y_iter = y_range.step_by(y_spacing).map(|y| y as f32);
+
+    let mut objects = vec![];
+    for y in y_iter {
+        for x in x_range.clone().step_by(x_spacing).map(|x| x as f32) {
+            if rng.gen_bool(0.30) {
+                let (image, action) = match rng.gen_range(0..14) {
+                    0..=2 => (&assets.objects.bump_l, CollisionAction::JumpSmall),
+                    3..=5 => (&assets.objects.bump_s, CollisionAction::JumpSmall),
+                    6..=8 => (&assets.objects.ramp, CollisionAction::JumpLarge),
+                    9 => (&assets.objects.rock, CollisionAction::Fall),
+                    10 => (&assets.objects.tree1, CollisionAction::Fall),
+                    11 => (&assets.objects.stump, CollisionAction::Fall),
+                    12 => (&assets.objects.xtree1, CollisionAction::Fall),
+                    13 => (&assets.objects.xtree2, CollisionAction::Fall),
+                    _ => continue,
+                };
+                objects.push(Object::immovable([x, y].into(), image, action))
+            }
+        }
+    }
+    objects
+}
+
+fn tree_slalom_course(assets: &Assets, rng: &mut OsRng) -> Vec<Object> {
+    let x_range = TREE_SLALOM_X_START..MAP_WIDTH;
+    let x_spacing = 40;
+
+    let y_range = COURSE_Y_START..MAP_HEIGHT;
+    let y_spacing = 100;
+    let y_iter = y_range.step_by(y_spacing).map(|y| y as f32);
+
+    let mut objects = vec![];
+    for y in y_iter {
+        for x in x_range.clone().step_by(x_spacing).map(|x| x as f32) {
+            if rng.gen_bool(0.30) {
+                let (image, action) = match rng.gen_range(0..15) {
+                    0..=4 => (&assets.objects.bigtree, CollisionAction::Fall),
+                    5 => (&assets.objects.tree1, CollisionAction::Fall),
+                    6 => (&assets.objects.tree2, CollisionAction::Fall),
+                    7 => (&assets.objects.tree3, CollisionAction::Fall),
+                    8 => (&assets.objects.tree4, CollisionAction::Fall),
+                    9 => (&assets.objects.xtree1, CollisionAction::Fall),
+                    10 => (&assets.objects.xtree2, CollisionAction::Fall),
+                    11 => (&assets.objects.xtree3, CollisionAction::Fall),
+                    12 => (&assets.objects.stump, CollisionAction::Fall),
+                    13 => (&assets.objects.mushroom, CollisionAction::Fall),
+                    14 => (&assets.objects.rock, CollisionAction::Fall),
                     _ => continue,
                 };
                 objects.push(Object::immovable([x, y].into(), image, action))

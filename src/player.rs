@@ -1,7 +1,7 @@
 use std::f32::consts::PI;
 use std::rc::Rc;
 
-use ggez::graphics::{Canvas, Color, DrawParam, Image, Mesh, Rect};
+use ggez::graphics::{Canvas, DrawParam, Image, Rect};
 use ggez::Context;
 
 use crate::assets::Assets;

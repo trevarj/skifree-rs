@@ -1,5 +1,3 @@
-use std::f32::consts::PI;
-
 use ggez::glam::Vec2;
 use ggez::graphics::{Canvas, Color, DrawMode, DrawParam, Mesh, Rect};
 use ggez::Context;
@@ -11,7 +9,7 @@ use ggez::Context;
 /// PI / 2 => points right
 /// PI     => points up
 /// 3PI/2  => points left
-pub fn vec_from_angle(angle: f32) -> Vec2 {
+pub fn vec2_from_angle(angle: f32) -> Vec2 {
     let vx = angle.sin();
     let vy = angle.cos();
     Vec2::new(vx, vy)

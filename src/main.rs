@@ -13,7 +13,7 @@ use ggez::{Context, ContextBuilder, GameResult};
 use crate::assets::Assets;
 use crate::map::Map;
 use crate::player::Player;
-use crate::util::vec_from_angle;
+use crate::util::vec2_from_angle;
 
 mod assets;
 mod map;
