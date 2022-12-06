@@ -116,9 +116,12 @@ fn main() -> Result<!> {
         PathBuf::from("./assets")
     };
 
+    let icon_path = resource_dir.join("icon.png");
+    let icon = icon_path.to_string_lossy();
+
     let (mut ctx, event_loop) = ContextBuilder::new("skifree-rs", "trevarj")
         .add_resource_path(resource_dir)
-        .window_setup(WindowSetup::default().title("SkiFree"))
+        .window_setup(WindowSetup::default().title("SkiFree").icon("/icon.png"))
         .window_mode(
             WindowMode::default()
                 .resizable(false)
