@@ -136,16 +136,22 @@ fn starting_objects(assets: &Assets) -> Vec<Object> {
 fn ski_lift(assets: &Assets) -> Vec<Object> {
     let mut objects = vec![];
     for y in (LIFT_Y_START..MAP_HEIGHT).step_by(400).map(|i| i as f32) {
+        objects.push(Object::movable(
+            [LIFT_X_POS - 18., y + 100.].into(),
+            &assets.objects.chairlift,
+            CollisionAction::Nothing,
+            |o| o.position.y += 0.2,
+        ));
+        objects.push(Object::movable(
+            [LIFT_X_POS + 18., y + 400.].into(),
+            &assets.objects.lifters,
+            CollisionAction::Nothing,
+            |o| o.position.y -= 0.2,
+        ));
         objects.push(Object::immovable(
             [LIFT_X_POS, y].into(),
             &assets.objects.lift,
             CollisionAction::Fall,
-        ));
-        objects.push(Object::movable(
-            [LIFT_X_POS, y + 100.].into(),
-            &assets.objects.chairlift,
-            CollisionAction::Nothing,
-            |o| o.position.y -= 0.2,
         ));
     }
     objects
@@ -230,7 +236,7 @@ fn tree_slalom_course(assets: &Assets, rng: &mut OsRng) -> Vec<Object> {
                     10 => (&assets.objects.xtree2, CollisionAction::Fall),
                     11 => (&assets.objects.xtree3, CollisionAction::Fall),
                     12 => (&assets.objects.stump, CollisionAction::Fall),
-                    13 => (&assets.objects.mushroom, CollisionAction::Fall),
+                    13 => (&assets.objects.mushroom, CollisionAction::Nothing),
                     14 => (&assets.objects.rock, CollisionAction::Fall),
                     _ => continue,
                 };
