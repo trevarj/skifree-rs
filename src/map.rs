@@ -15,7 +15,7 @@ use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
 const MAP_WIDTH: i32 = 3000;
 const MAP_HEIGHT: i32 = 20_000;
 const COURSE_WIDTH: i32 = MAP_WIDTH / 3;
-const COURSE_Y_START: i32 = 500;
+const COURSE_Y_START: i32 = 300;
 const SLALOM_X_START: i32 = MAP_WIDTH / -2;
 const FREESTYLE_X_START: i32 = SLALOM_X_START + COURSE_WIDTH;
 const TREE_SLALOM_X_START: i32 = FREESTYLE_X_START + COURSE_WIDTH;
@@ -107,23 +107,23 @@ fn starting_objects(assets: &Assets) -> Vec<Object> {
     let xtree = &assets.objects.xtree1;
 
     let x = 250.;
-    let y = 250.;
+    let y = 150.;
     let spacing = 10.;
     let slalom_xy = [x, y];
     let freestyle_xy = [slalom_xy[0] + spacing + slalom.width() as f32, y];
     let tree_slalom_xy = [freestyle_xy[0] + spacing + freestyle.width() as f32, y];
     [
-        ([250., 210.], btree),
-        ([410., 210.], btree),
-        ([290., 210.], btree),
-        ([330., 210.], btree),
-        ([370., 210.], btree),
-        ([270., 220.], btree),
-        ([310., 220.], btree),
-        ([350., 220.], btree),
-        ([390., 220.], btree),
-        ([230., 250.], xtree),
-        ([410., 250.], xtree),
+        ([250., 110.], btree),
+        ([410., 110.], btree),
+        ([290., 110.], btree),
+        ([330., 110.], btree),
+        ([370., 110.], btree),
+        ([270., 120.], btree),
+        ([310., 120.], btree),
+        ([350., 120.], btree),
+        ([390., 120.], btree),
+        ([230., 150.], xtree),
+        ([410., 150.], xtree),
         (slalom_xy, slalom),
         (freestyle_xy, freestyle),
         (tree_slalom_xy, tree_slalom),

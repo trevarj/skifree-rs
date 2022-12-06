@@ -22,7 +22,7 @@ pub enum CollisionAction {
 }
 
 impl Player {
-    pub const POSITION: [f32; 2] = [240., 320.];
+    pub const POSITION: [f32; 2] = [240., 200.];
     pub const PLAYER_SPEED: f32 = 3.;
 
     pub fn new(assets: &Assets) -> Self {
