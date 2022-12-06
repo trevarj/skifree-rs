@@ -1,7 +1,7 @@
 use std::rc::Rc;
 
 use ggez::glam::Vec2;
-use ggez::graphics::Image;
+use ggez::graphics::{Image, Rect};
 use ggez::mint::Point2;
 
 use crate::player::CollisionAction;
@@ -58,5 +58,11 @@ impl Object {
         let v2 = vec_from_angle(direction);
         pos += v2 * magnitude;
         self.position = pos.into();
+    }
+
+    pub fn hitbox(&self) -> Rect {
+        let width = self.image.width() as f32;
+        let height = self.image.height() as f32;
+        Rect::new(self.position.x, self.position.y + height, width, 5.)
     }
 }

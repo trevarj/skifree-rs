@@ -1,6 +1,8 @@
 use std::f32::consts::PI;
 
 use ggez::glam::Vec2;
+use ggez::graphics::{Canvas, Color, DrawMode, DrawParam, Mesh, Rect};
+use ggez::Context;
 
 /// Create a unit vector representing the
 /// given angle (in radians).
@@ -13,4 +15,11 @@ pub fn vec_from_angle(angle: f32) -> Vec2 {
     let vx = angle.sin();
     let vy = angle.cos();
     Vec2::new(vx, vy)
+}
+
+pub fn draw_hitbox(ctx: &Context, canvas: &mut Canvas, hitbox: Rect) {
+    canvas.draw(
+        &Mesh::new_rectangle(ctx, DrawMode::stroke(1.), hitbox, Color::RED).unwrap(),
+        DrawParam::default(),
+    );
 }

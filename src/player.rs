@@ -1,12 +1,16 @@
 use std::f32::consts::PI;
+use std::rc::Rc;
 
-use ggez::graphics::{Canvas, DrawParam};
+use ggez::graphics::{Canvas, Color, DrawParam, Image, Mesh, Rect};
+use ggez::Context;
 
 use crate::assets::Assets;
+use crate::util::draw_hitbox;
 
 #[derive(Debug)]
 pub struct Player {
     state: PlayerState,
+    image: Rc<Image>,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -19,12 +23,12 @@ pub enum CollisionAction {
 
 impl Player {
     pub const POSITION: [f32; 2] = [240., 320.];
-    pub const HIT_BOX_SIZE: f32 = 20.;
     pub const PLAYER_SPEED: f32 = 3.;
 
-    pub fn new() -> Self {
+    pub fn new(assets: &Assets) -> Self {
         Self {
             state: PlayerState::RightStop,
+            image: assets.player.skier_r.clone(),
         }
     }
 
@@ -37,8 +41,9 @@ impl Player {
         };
     }
 
-    pub fn maybe_next_state(&mut self) {
+    pub fn maybe_next_state(&mut self, assets: &Assets) {
         self.state = self.state.next_state();
+        self.image = self.image(assets);
     }
 
     pub fn slide_left(&mut self) {
@@ -81,29 +86,19 @@ impl Player {
         };
     }
 
-    pub fn draw(&self, assets: &Assets, canvas: &mut Canvas) {
-        let image = match self.state {
-            PlayerState::Downward => &assets.player.skier_down,
-            PlayerState::Fallen(_) => &assets.player.skier_fall,
-            PlayerState::Sitting(_) => &assets.player.skier_sit,
-            PlayerState::Flip(fs) => match fs {
-                FlipSequence::Flip1(_) => &assets.player.skier_flip,
-                FlipSequence::Flip2(_) => &assets.player.skier_flip2,
-                FlipSequence::Flip3(_) => &assets.player.skier_flip3,
-                FlipSequence::Flip4(_) => &assets.player.skier_flip4,
-            },
-            PlayerState::Jump(_) => &assets.player.skier_jump,
-            PlayerState::LeftStop => &assets.player.skier_l,
-            PlayerState::LeftMove => &assets.player.skier_l2,
-            PlayerState::RightStop => &assets.player.skier_r,
-            PlayerState::RightMove => &assets.player.skier_r2,
-            PlayerState::Left30 => &assets.player.skier_l30,
-            PlayerState::Left45 => &assets.player.skier_l45,
-            PlayerState::Right30 => &assets.player.skier_r30,
-            PlayerState::Right45 => &assets.player.skier_r45,
-            PlayerState::Trick1(_) => &assets.player.skier_trick,
-            PlayerState::Trick2(_) => &assets.player.skier_trick2,
-        };
+    pub fn hitbox(&self) -> Rect {
+        Rect::new(
+            Self::POSITION[0],
+            Self::POSITION[1] + self.image.height() as f32,
+            self.image.width() as f32,
+            5.,
+        )
+    }
+
+    pub fn draw(&self, ctx: &Context, assets: &Assets, canvas: &mut Canvas) {
+        let image = self.image(assets);
+        #[cfg(debug_assertions)]
+        draw_hitbox(ctx, canvas, self.hitbox());
         canvas.draw(image.as_ref(), DrawParam::default().dest(Self::POSITION));
     }
 
@@ -149,6 +144,32 @@ impl Player {
         }
     }
 
+    fn image(&self, assets: &Assets) -> Rc<Image> {
+        let image = match self.state {
+            PlayerState::Downward => &assets.player.skier_down,
+            PlayerState::Fallen(_) => &assets.player.skier_fall,
+            PlayerState::Sitting(_) => &assets.player.skier_sit,
+            PlayerState::Flip(fs) => match fs {
+                FlipSequence::Flip1(_) => &assets.player.skier_flip,
+                FlipSequence::Flip2(_) => &assets.player.skier_flip2,
+                FlipSequence::Flip3(_) => &assets.player.skier_flip3,
+                FlipSequence::Flip4(_) => &assets.player.skier_flip4,
+            },
+            PlayerState::Jump(_) => &assets.player.skier_jump,
+            PlayerState::LeftStop => &assets.player.skier_l,
+            PlayerState::LeftMove => &assets.player.skier_l2,
+            PlayerState::RightStop => &assets.player.skier_r,
+            PlayerState::RightMove => &assets.player.skier_r2,
+            PlayerState::Left30 => &assets.player.skier_l30,
+            PlayerState::Left45 => &assets.player.skier_l45,
+            PlayerState::Right30 => &assets.player.skier_r30,
+            PlayerState::Right45 => &assets.player.skier_r45,
+            PlayerState::Trick1(_) => &assets.player.skier_trick,
+            PlayerState::Trick2(_) => &assets.player.skier_trick2,
+        };
+        image.clone()
+    }
+
     /// Moving, standing, but not jumping, tricking or fallen
     fn is_upright(&self) -> bool {
         matches!(
@@ -168,8 +189,8 @@ impl Player {
 
 type Frames = u8;
 
-const FALLEN_FRAMES: u8 = 20;
-const SITTING_FRAMES: u8 = 30;
+const FALLEN_FRAMES: u8 = 60;
+const SITTING_FRAMES: u8 = 60;
 const JUMP_FRAMES_SHORT: u8 = 20;
 const JUMP_FRAMES_LONG: u8 = 40;
 

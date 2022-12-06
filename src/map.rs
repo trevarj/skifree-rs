@@ -1,15 +1,16 @@
 use std::rc::Rc;
 
 use ggez::glam::Vec2;
-use ggez::graphics::{Canvas, Image};
+use ggez::graphics::{Canvas, Color, DrawParam, Image, Mesh, Rect};
 use ggez::mint::Point2;
+use ggez::Context;
 use rand::rngs::OsRng;
 use rand::Rng;
 
 use crate::assets::Assets;
 use crate::map::objects::Object;
 use crate::player::{CollisionAction, Player};
-use crate::util::vec_from_angle;
+use crate::util::{draw_hitbox, vec_from_angle};
 use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
 const LIFT_X_POS: f32 = 100.;
@@ -47,12 +48,12 @@ impl Map {
         }
     }
 
-    pub fn check_collision(&self) -> Option<CollisionAction> {
-        self.objects.iter().find_map(|o| {
-            let pdistance = Vec2::from(o.position) - Vec2::from(Player::POSITION);
-            if pdistance.length() < 10. {
-                // TODO: idk what this val should be
-                Some(o.collision_action)
+    pub fn check_collision(&mut self, player: &Player) -> Option<CollisionAction> {
+        self.objects.iter_mut().find_map(|o| {
+            if o.hitbox().overlaps(&player.hitbox()) {
+                let action = o.collision_action;
+                o.collision_action = CollisionAction::Nothing;
+                Some(action)
             } else {
                 None
             }
@@ -95,13 +96,15 @@ impl Map {
         // random right (wilderness)
     }
 
-    pub fn draw(&self, canvas: &mut Canvas) {
+    pub fn draw(&self, ctx: &Context, canvas: &mut Canvas) {
         for o in self.objects.iter().filter(|o| {
             o.position.x >= 0. - 100.
                 && o.position.x <= WINDOW_WIDTH + 100.
                 && o.position.y >= 0. - 100.
                 && o.position.y <= WINDOW_HEIGHT + 100.
         }) {
+            #[cfg(debug_assertions)]
+            draw_hitbox(ctx, canvas, o.hitbox());
             canvas.draw(o.image.as_ref(), o.position);
         }
     }
@@ -109,7 +112,7 @@ impl Map {
     /// Generates new random immovable objects
     fn generate_objects(&mut self, assets: &Assets, direction: f32) {
         // off-screen where Player is heading
-        let pos = dbg!(vec_from_angle(direction) * 850.);
+        let pos = vec_from_angle(direction) * 850.;
         let start_x = pos.x as i32;
         let start_y = pos.y as i32;
         for y in (start_y - 100..start_y + 100).step_by(30).map(|y| y as f32) {

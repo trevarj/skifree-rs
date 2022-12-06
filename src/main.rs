@@ -27,7 +27,6 @@ struct SkiFree {
     assets: Assets,
     map: Map,
     player: Player,
-    should_generate: bool,
 }
 
 impl SkiFree {
@@ -35,17 +34,16 @@ impl SkiFree {
         // Load/create resources such as images here.
         let assets = Assets::new(ctx)?;
         let map = Map::new(&assets);
-        let player = Player::new();
+        let player = Player::new(&assets);
         Ok(Self {
             assets,
             map,
             player,
-            should_generate: false,
         })
     }
 
     fn handle_collisions(&mut self) {
-        if let Some(action) = self.map.check_collision() {
+        if let Some(action) = self.map.check_collision(&self.player) {
             self.player.collision(action);
         }
     }
@@ -62,7 +60,7 @@ impl EventHandler for SkiFree {
 
             self.map.update(&self.assets, &self.player);
 
-            self.player.maybe_next_state();
+            self.player.maybe_next_state(&self.assets);
         }
         Ok(())
     }
@@ -72,8 +70,8 @@ impl EventHandler for SkiFree {
         canvas.set_sampler(Sampler::nearest_clamp());
 
         // Draw code here...
-        self.map.draw(&mut canvas);
-        self.player.draw(&self.assets, &mut canvas);
+        self.map.draw(ctx, &mut canvas);
+        self.player.draw(ctx, &self.assets, &mut canvas);
 
         canvas.finish(ctx)?;
 
