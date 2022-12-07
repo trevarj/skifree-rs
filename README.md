@@ -14,7 +14,7 @@ cargo install --path . # or just `cargo run --release`
 ## Lots of TODOs
 
 - [ ] AI for NPCs (noob, snowboarder, abominable snowman)
-- [ ] Wrap the map around when at edge
+- [x] Wrap the map around when at edge
 - [ ] Add slalom course
 - [ ] Add trick animations / controls
 - [ ] Add game title at start

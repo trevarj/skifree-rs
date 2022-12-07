@@ -14,6 +14,8 @@ use crate::{WINDOW_HEIGHT, WINDOW_WIDTH};
 
 const MAP_WIDTH: i32 = 3000;
 const MAP_HEIGHT: i32 = 20_000;
+const MAP_X_START: i32 = SLALOM_X_START;
+
 const COURSE_WIDTH: i32 = MAP_WIDTH / 3;
 const COURSE_Y_START: i32 = 300;
 const SLALOM_X_START: i32 = MAP_WIDTH / -2;

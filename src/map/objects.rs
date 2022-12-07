@@ -4,6 +4,7 @@ use ggez::glam::Vec2;
 use ggez::graphics::{Image, Rect};
 use ggez::mint::Point2;
 
+use crate::map::{MAP_WIDTH, MAP_X_START};
 use crate::player::CollisionAction;
 use crate::util::vec2_from_angle;
 
@@ -56,6 +57,13 @@ impl Object {
         let mut pos: Vec2 = self.position.into();
         let v2 = vec2_from_angle(direction);
         pos += v2 * magnitude;
+        let start = MAP_X_START as f32;
+        let end = MAP_WIDTH as f32;
+        if pos.x > end {
+            pos.x = start;
+        } else if pos.x < start {
+            pos.x = end;
+        }
         self.position = pos.into();
     }
 
