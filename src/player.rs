@@ -11,6 +11,7 @@ use crate::util::draw_hitbox;
 pub struct Player {
     state: PlayerState,
     image: Rc<Image>,
+    speed: f32,
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -19,17 +20,23 @@ pub enum CollisionAction {
     Fall,
     JumpSmall,
     JumpLarge,
+    SlowDown,
 }
 
 impl Player {
     pub const POSITION: [f32; 2] = [240., 200.];
-    pub const PLAYER_SPEED: f32 = 3.;
+    const PLAYER_SPEED_NORMAL: f32 = 3.;
 
     pub fn new(assets: &Assets) -> Self {
         Self {
             state: PlayerState::RightStop,
             image: assets.player.skier_r.clone(),
+            speed: Self::PLAYER_SPEED_NORMAL,
         }
+    }
+
+    pub fn speed(&self) -> f32 {
+        self.speed
     }
 
     pub fn collision(&mut self, action: CollisionAction) {

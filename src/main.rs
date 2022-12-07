@@ -11,11 +11,13 @@ use ggez::winit::event::VirtualKeyCode;
 use ggez::{Context, ContextBuilder, GameResult};
 
 use crate::assets::Assets;
+use crate::hud::Hud;
 use crate::map::Map;
 use crate::player::Player;
 use crate::util::vec2_from_angle;
 
 mod assets;
+mod hud;
 mod map;
 mod player;
 mod util;
@@ -27,6 +29,7 @@ struct SkiFree {
     assets: Assets,
     map: Map,
     player: Player,
+    hud: Hud,
 }
 
 impl SkiFree {
@@ -39,6 +42,7 @@ impl SkiFree {
             assets,
             map,
             player,
+            hud: Default::default(),
         })
     }
 
@@ -54,11 +58,15 @@ impl EventHandler for SkiFree {
         const DESIRED_FPS: u32 = 60;
 
         while ctx.time.check_update_time(DESIRED_FPS) {
-            let _seconds = 1.0 / (DESIRED_FPS as f32);
+            let seconds = 1.0 / (DESIRED_FPS as f32);
 
             self.handle_collisions();
 
             self.map.update(&self.assets, &self.player);
+            self.hud = self
+                .hud
+                .set_distance(self.map.y_distance())
+                .add_time(seconds);
 
             self.player.maybe_next_state(&self.assets);
         }
@@ -69,9 +77,9 @@ impl EventHandler for SkiFree {
         let mut canvas = Canvas::from_frame(ctx, Color::WHITE);
         canvas.set_sampler(Sampler::nearest_clamp());
 
-        // Draw code here...
         self.map.draw(ctx, &mut canvas);
         self.player.draw(ctx, &self.assets, &mut canvas);
+        self.hud.draw(ctx, &mut canvas);
 
         canvas.finish(ctx)?;
 

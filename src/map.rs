@@ -67,9 +67,8 @@ impl Map {
         self.objects.retain_mut(|o| {
             if o.position.y < -50. {
                 return false;
-            } else if let Some((direction, magnitude)) = player
-                .opposite_direction()
-                .map(|d| (d, Player::PLAYER_SPEED))
+            } else if let Some((direction, magnitude)) =
+                player.opposite_direction().map(|d| (d, player.speed()))
             {
                 o.shift(direction, magnitude);
             }
@@ -93,10 +92,10 @@ impl Map {
             draw_hitbox(ctx, canvas, o.hitbox());
             canvas.draw(o.image.as_ref(), o.position);
         }
-        canvas.draw(
-            &Text::new(format!("distance: {:.0}", self.y_distance)),
-            DrawParam::new().dest([0., 0.]).color(Color::BLACK),
-        );
+    }
+
+    pub fn y_distance(&self) -> f32 {
+        self.y_distance
     }
 }
 
