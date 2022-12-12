@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, FRAC_PI_6, PI};
 use std::rc::Rc;
 
 use ggez::graphics::{Canvas, DrawParam, Image, Rect};
@@ -116,12 +116,12 @@ impl Player {
             | PlayerState::Jump(_)
             | PlayerState::Trick1(_)
             | PlayerState::Trick2(_) => Some(0.),
-            PlayerState::LeftMove => Some(3. * PI / 2.),
-            PlayerState::RightMove => Some(PI / 2.),
-            PlayerState::Left30 => Some(11. * PI / 6.),
-            PlayerState::Left45 => Some(7. * PI / 4.),
-            PlayerState::Right30 => Some(PI / 6.),
-            PlayerState::Right45 => Some(PI / 4.),
+            PlayerState::LeftMove => Some(3. * FRAC_PI_2),
+            PlayerState::RightMove => Some(FRAC_PI_2),
+            PlayerState::Left30 => Some(11. * FRAC_PI_6),
+            PlayerState::Left45 => Some(7. * FRAC_PI_4),
+            PlayerState::Right30 => Some(FRAC_PI_6),
+            PlayerState::Right45 => Some(FRAC_PI_4),
             PlayerState::LeftStop
             | PlayerState::RightStop
             | PlayerState::Fallen(_)
