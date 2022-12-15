@@ -3,13 +3,13 @@ name: Upload Release
 on:
   push:
     tags:
-      - v*
+      - v[12].[0-9]+.[0-9]+
 
 env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release:
+  build:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
