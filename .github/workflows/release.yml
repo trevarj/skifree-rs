@@ -9,7 +9,6 @@ env:
 
 jobs:
   build:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -24,7 +23,7 @@ jobs:
       run: cargo test --verbose
     - name: Build
       run: cargo build --verbose
-     - name: Release
-        uses: softprops/action-gh-release@v1
-        with:
-          files: target/release/skifree-rs
+    - name: Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: target/release/skifree-rs
