@@ -27,3 +27,6 @@ jobs:
       uses: softprops/action-gh-release@v1
       with:
         files: target/release/skifree-rs
+      env:
+        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
