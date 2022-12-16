@@ -24,8 +24,9 @@ jobs:
     #   run: cargo test --verbose
     - name: Build
       run: cargo build --release --verbose
+    - name: pwd
+      run: pwd
     - name: GH Release
-      working-directory: skifree-rs
       uses: softprops/action-gh-release@v1
       with:
         files: ./target/release/skifree-rs
