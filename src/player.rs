@@ -20,7 +20,23 @@ pub enum CollisionAction {
     Fall,
     JumpSmall,
     JumpLarge,
-    SlowDown,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum TrickType {
+    Trick1,
+    Trick2,
+    Flip,
+}
+
+impl TrickType {
+    fn required_frames(&self) -> i8 {
+        match self {
+            TrickType::Trick1 => TRICK1_FRAMES,
+            TrickType::Trick2 => TRICK2_FRAMES,
+            TrickType::Flip => FLIP_FRAMES,
+        }
+    }
 }
 
 impl Player {
@@ -46,6 +62,18 @@ impl Player {
             CollisionAction::JumpLarge if self.is_upright() => PlayerState::Jump(JUMP_FRAMES_LONG),
             _ => self.state,
         };
+    }
+
+    pub fn do_trick(&mut self, trick: TrickType) {
+        let trick_frames = trick.required_frames();
+        if let Some(jump_frame) = self.jump_frame() {
+            let success = trick_frames <= jump_frame;
+            self.state = match trick {
+                TrickType::Trick1 => PlayerState::Trick1(jump_frame, success),
+                TrickType::Trick2 => PlayerState::Trick2(jump_frame, success),
+                TrickType::Flip => PlayerState::Flip(FlipSequence::Flip1(jump_frame), success),
+            };
+        }
     }
 
     pub fn maybe_next_state(&mut self, assets: &Assets) {
@@ -112,10 +140,10 @@ impl Player {
     pub fn direction(&self) -> Option<f32> {
         match &self.state {
             PlayerState::Downward
-            | PlayerState::Flip(_)
-            | PlayerState::Jump(_)
-            | PlayerState::Trick1(_)
-            | PlayerState::Trick2(_) => Some(0.),
+            | PlayerState::Flip(..)
+            | PlayerState::Jump(..)
+            | PlayerState::Trick1(..)
+            | PlayerState::Trick2(..) => Some(0.),
             PlayerState::LeftMove => Some(3. * FRAC_PI_2),
             PlayerState::RightMove => Some(FRAC_PI_2),
             PlayerState::Left30 => Some(11. * FRAC_PI_6),
@@ -134,10 +162,10 @@ impl Player {
     pub fn opposite_direction(&self) -> Option<f32> {
         match &self.state {
             PlayerState::Downward
-            | PlayerState::Flip(_)
+            | PlayerState::Flip(..)
             | PlayerState::Jump(_)
-            | PlayerState::Trick1(_)
-            | PlayerState::Trick2(_) => Some(PI),
+            | PlayerState::Trick1(..)
+            | PlayerState::Trick2(..) => Some(PI),
             PlayerState::LeftMove => Some(PI / 2.),
             PlayerState::RightMove => Some(3. * PI / 2.),
             PlayerState::Left30 => Some(5. * PI / 6.),
@@ -156,7 +184,7 @@ impl Player {
             PlayerState::Downward => &assets.player.skier_down,
             PlayerState::Fallen(_) => &assets.player.skier_fall,
             PlayerState::Sitting(_) => &assets.player.skier_sit,
-            PlayerState::Flip(fs) => match fs {
+            PlayerState::Flip(fs, _) => match fs {
                 FlipSequence::Flip1(_) => &assets.player.skier_flip,
                 FlipSequence::Flip2(_) => &assets.player.skier_flip2,
                 FlipSequence::Flip3(_) => &assets.player.skier_flip3,
@@ -171,8 +199,8 @@ impl Player {
             PlayerState::Left45 => &assets.player.skier_l45,
             PlayerState::Right30 => &assets.player.skier_r30,
             PlayerState::Right45 => &assets.player.skier_r45,
-            PlayerState::Trick1(_) => &assets.player.skier_trick,
-            PlayerState::Trick2(_) => &assets.player.skier_trick2,
+            PlayerState::Trick1(..) => &assets.player.skier_trick,
+            PlayerState::Trick2(..) => &assets.player.skier_trick2,
         };
         image.clone()
     }
@@ -196,24 +224,36 @@ impl Player {
     fn is_tricking(&self) -> bool {
         matches!(
             self.state,
-            PlayerState::Flip(_) | PlayerState::Trick1(_) | PlayerState::Trick2(_)
+            PlayerState::Flip(..) | PlayerState::Trick1(..) | PlayerState::Trick2(..)
         )
+    }
+
+    pub fn jump_frame(&self) -> Option<i8> {
+        if let PlayerState::Jump(frame) = self.state {
+            Some(frame)
+        } else {
+            // not jumping
+            None
+        }
     }
 }
 
-type Frames = u8;
+type Frames = i8;
 
-const FALLEN_FRAMES: u8 = 60;
-const SITTING_FRAMES: u8 = 60;
-const JUMP_FRAMES_SHORT: u8 = 20;
-const JUMP_FRAMES_LONG: u8 = 40;
+const FALLEN_FRAMES: i8 = 60;
+const SITTING_FRAMES: i8 = 60;
+const JUMP_FRAMES_SHORT: i8 = 20;
+const JUMP_FRAMES_LONG: i8 = 60;
+const TRICK1_FRAMES: i8 = 40;
+const TRICK2_FRAMES: i8 = 40;
+const FLIP_FRAMES: i8 = 50;
 
 #[derive(Debug, Clone, Copy)]
 enum PlayerState {
     Downward,
     Fallen(Frames),
     Sitting(Frames),
-    Flip(FlipSequence),
+    Flip(FlipSequence, bool),
     Jump(Frames),
     LeftStop,
     LeftMove,
@@ -223,8 +263,8 @@ enum PlayerState {
     Left45,
     Right30,
     Right45,
-    Trick1(Frames),
-    Trick2(Frames),
+    Trick1(Frames, bool),
+    Trick2(Frames, bool),
 }
 
 impl PlayerState {
@@ -233,23 +273,25 @@ impl PlayerState {
             PlayerState::Fallen(f) if f > 0 => PlayerState::Fallen(f - 1),
             PlayerState::Sitting(f) if f > 0 => PlayerState::Sitting(f - 1),
             PlayerState::Jump(f) if f > 0 => PlayerState::Jump(f - 1),
-            PlayerState::Trick1(f) if f > 0 => PlayerState::Trick1(f - 1),
-            PlayerState::Trick2(f) if f > 0 => PlayerState::Trick2(f - 1),
-            PlayerState::Flip(flip) => PlayerState::Flip(match flip {
-                FlipSequence::Flip1(f) if f > 0 => FlipSequence::Flip1(f - 1),
-                FlipSequence::Flip2(f) if f > 0 => FlipSequence::Flip2(f - 1),
-                FlipSequence::Flip3(f) if f > 0 => FlipSequence::Flip3(f - 1),
-                FlipSequence::Flip4(f) if f > 0 => FlipSequence::Flip4(f - 1),
-                FlipSequence::Flip1(_) => FlipSequence::Flip2(FLIP_FRAMES),
-                FlipSequence::Flip2(_) => FlipSequence::Flip3(FLIP_FRAMES),
-                FlipSequence::Flip3(_) => FlipSequence::Flip4(FLIP_FRAMES),
-                FlipSequence::Flip4(_) => return PlayerState::Downward,
-            }),
+            PlayerState::Trick1(f, s) if f > 0 => PlayerState::Trick1(f - 1, s),
+            PlayerState::Trick1(_, s) => {
+                if s {
+                    PlayerState::Downward
+                } else {
+                    PlayerState::Fallen(FALLEN_FRAMES)
+                }
+            }
+            PlayerState::Trick2(f, s) if f > 0 => PlayerState::Trick2(f - 1, s),
+            PlayerState::Trick2(_, s) => {
+                if s {
+                    PlayerState::Downward
+                } else {
+                    PlayerState::Fallen(FALLEN_FRAMES)
+                }
+            }
+            PlayerState::Flip(flip, s) => flip.next_state(s),
             PlayerState::Fallen(_) => PlayerState::Sitting(SITTING_FRAMES),
-            PlayerState::Sitting(_)
-            | PlayerState::Jump(_)
-            | PlayerState::Trick1(_)
-            | PlayerState::Trick2(_) => PlayerState::Downward,
+            PlayerState::Sitting(_) | PlayerState::Jump(_) => PlayerState::Downward,
             PlayerState::Downward
             | PlayerState::LeftStop
             | PlayerState::LeftMove
@@ -263,11 +305,70 @@ impl PlayerState {
     }
 }
 
-const FLIP_FRAMES: u8 = 3;
 #[derive(Debug, Clone, Copy)]
 enum FlipSequence {
     Flip1(Frames),
     Flip2(Frames),
     Flip3(Frames),
     Flip4(Frames),
+}
+
+impl FlipSequence {
+    fn next_state(self, success: bool) -> PlayerState {
+        PlayerState::Flip(
+            match self {
+                FlipSequence::Flip1(f) => {
+                    if f == (FLIP_FRAMES / 4) * 3 {
+                        FlipSequence::Flip2(f)
+                    } else if f <= 0 {
+                        if !success {
+                            return PlayerState::Fallen(FALLEN_FRAMES);
+                        } else {
+                            return PlayerState::Downward;
+                        }
+                    } else {
+                        FlipSequence::Flip1(f - 1)
+                    }
+                }
+                FlipSequence::Flip2(f) => {
+                    if f == (FLIP_FRAMES / 4) * 2 {
+                        FlipSequence::Flip3(f)
+                    } else if f <= 0 {
+                        if !success {
+                            return PlayerState::Fallen(FALLEN_FRAMES);
+                        } else {
+                            return PlayerState::Downward;
+                        }
+                    } else {
+                        FlipSequence::Flip2(f - 1)
+                    }
+                }
+                FlipSequence::Flip3(f) => {
+                    if f == (FLIP_FRAMES / 4) * 2 {
+                        FlipSequence::Flip4(f)
+                    } else if f <= 0 {
+                        if !success {
+                            return PlayerState::Fallen(FALLEN_FRAMES);
+                        } else {
+                            return PlayerState::Downward;
+                        }
+                    } else {
+                        FlipSequence::Flip3(f - 1)
+                    }
+                }
+                FlipSequence::Flip4(f) => {
+                    if f == 0 {
+                        if !success {
+                            return PlayerState::Fallen(FALLEN_FRAMES);
+                        } else {
+                            return PlayerState::Downward;
+                        }
+                    } else {
+                        FlipSequence::Flip4(f - 1)
+                    }
+                }
+            },
+            success,
+        )
+    }
 }

@@ -9,12 +9,12 @@ use ggez::graphics::{Canvas, Color, Sampler};
 use ggez::input::keyboard::KeyInput;
 use ggez::winit::event::VirtualKeyCode;
 use ggez::{Context, ContextBuilder, GameResult};
+use player::TrickType;
 
 use crate::assets::Assets;
 use crate::hud::Hud;
 use crate::map::Map;
 use crate::player::Player;
-use crate::util::{angle_from_vec2, vec2_from_angle};
 
 mod assets;
 mod hud;
@@ -96,6 +96,9 @@ impl EventHandler for SkiFree {
                 VirtualKeyCode::Escape | VirtualKeyCode::Q => ctx.request_quit(),
                 VirtualKeyCode::Left => self.player.left(),
                 VirtualKeyCode::Right => self.player.right(),
+                VirtualKeyCode::Z => self.player.do_trick(TrickType::Trick1),
+                VirtualKeyCode::X => self.player.do_trick(TrickType::Trick2),
+                VirtualKeyCode::C => self.player.do_trick(TrickType::Flip),
                 _ => {}
             }
         }
@@ -123,9 +126,6 @@ fn main() -> Result<!> {
     } else {
         PathBuf::from("./assets")
     };
-
-    let icon_path = resource_dir.join("icon.png");
-    let icon = icon_path.to_string_lossy();
 
     let (mut ctx, event_loop) = ContextBuilder::new("skifree-rs", "trevarj")
         .add_resource_path(resource_dir)
