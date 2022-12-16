@@ -1,4 +1,4 @@
-name: Upload Release
+name: Create & Upload Release
 
 on:
    push:
@@ -8,7 +8,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  build:
+  release:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -23,11 +23,8 @@ jobs:
     - name: Run tests
       run: cargo test --verbose
     - name: Build
-      run: cargo build --verbose
+      run: cargo build --release --verbose
     - name: GH Release
       uses: softprops/action-gh-release@v1
       with:
         files: target/release/skifree-rs
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
