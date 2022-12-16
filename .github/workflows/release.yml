@@ -1,4 +1,4 @@
-name: Create & Upload Release
+name: Upload Release
 
 on:
    push:
@@ -20,11 +20,12 @@ jobs:
         toolchain: nightly
         override: true
         components: rustfmt, clippy
-    - name: Run tests
-      run: cargo test --verbose
+    # - name: Run tests
+    #   run: cargo test --verbose
     - name: Build
       run: cargo build --release --verbose
     - name: GH Release
+      working-directory: skifree-rs
       uses: softprops/action-gh-release@v1
       with:
-        files: target/release/skifree-rs
+        files: ./target/release/skifree-rs

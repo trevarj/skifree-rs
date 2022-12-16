@@ -192,6 +192,13 @@ impl Player {
                 | PlayerState::Right45
         )
     }
+
+    fn is_tricking(&self) -> bool {
+        matches!(
+            self.state,
+            PlayerState::Flip(_) | PlayerState::Trick1(_) | PlayerState::Trick2(_)
+        )
+    }
 }
 
 type Frames = u8;
@@ -228,7 +235,16 @@ impl PlayerState {
             PlayerState::Jump(f) if f > 0 => PlayerState::Jump(f - 1),
             PlayerState::Trick1(f) if f > 0 => PlayerState::Trick1(f - 1),
             PlayerState::Trick2(f) if f > 0 => PlayerState::Trick2(f - 1),
-            PlayerState::Flip(flip) => todo!(),
+            PlayerState::Flip(flip) => PlayerState::Flip(match flip {
+                FlipSequence::Flip1(f) if f > 0 => FlipSequence::Flip1(f - 1),
+                FlipSequence::Flip2(f) if f > 0 => FlipSequence::Flip2(f - 1),
+                FlipSequence::Flip3(f) if f > 0 => FlipSequence::Flip3(f - 1),
+                FlipSequence::Flip4(f) if f > 0 => FlipSequence::Flip4(f - 1),
+                FlipSequence::Flip1(_) => FlipSequence::Flip2(FLIP_FRAMES),
+                FlipSequence::Flip2(_) => FlipSequence::Flip3(FLIP_FRAMES),
+                FlipSequence::Flip3(_) => FlipSequence::Flip4(FLIP_FRAMES),
+                FlipSequence::Flip4(_) => return PlayerState::Downward,
+            }),
             PlayerState::Fallen(_) => PlayerState::Sitting(SITTING_FRAMES),
             PlayerState::Sitting(_)
             | PlayerState::Jump(_)
