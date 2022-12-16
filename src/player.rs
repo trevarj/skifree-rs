@@ -1,4 +1,4 @@
-use std::f32::consts::PI;
+use std::f32::consts::{FRAC_PI_2, FRAC_PI_4, FRAC_PI_6, PI};
 use std::rc::Rc;
 
 use ggez::graphics::{Canvas, DrawParam, Image, Rect};
@@ -116,12 +116,12 @@ impl Player {
             | PlayerState::Jump(_)
             | PlayerState::Trick1(_)
             | PlayerState::Trick2(_) => Some(0.),
-            PlayerState::LeftMove => Some(3. * PI / 2.),
-            PlayerState::RightMove => Some(PI / 2.),
-            PlayerState::Left30 => Some(11. * PI / 6.),
-            PlayerState::Left45 => Some(7. * PI / 4.),
-            PlayerState::Right30 => Some(PI / 6.),
-            PlayerState::Right45 => Some(PI / 4.),
+            PlayerState::LeftMove => Some(3. * FRAC_PI_2),
+            PlayerState::RightMove => Some(FRAC_PI_2),
+            PlayerState::Left30 => Some(11. * FRAC_PI_6),
+            PlayerState::Left45 => Some(7. * FRAC_PI_4),
+            PlayerState::Right30 => Some(FRAC_PI_6),
+            PlayerState::Right45 => Some(FRAC_PI_4),
             PlayerState::LeftStop
             | PlayerState::RightStop
             | PlayerState::Fallen(_)
@@ -192,6 +192,13 @@ impl Player {
                 | PlayerState::Right45
         )
     }
+
+    fn is_tricking(&self) -> bool {
+        matches!(
+            self.state,
+            PlayerState::Flip(_) | PlayerState::Trick1(_) | PlayerState::Trick2(_)
+        )
+    }
 }
 
 type Frames = u8;
@@ -228,7 +235,16 @@ impl PlayerState {
             PlayerState::Jump(f) if f > 0 => PlayerState::Jump(f - 1),
             PlayerState::Trick1(f) if f > 0 => PlayerState::Trick1(f - 1),
             PlayerState::Trick2(f) if f > 0 => PlayerState::Trick2(f - 1),
-            PlayerState::Flip(flip) => todo!(),
+            PlayerState::Flip(flip) => PlayerState::Flip(match flip {
+                FlipSequence::Flip1(f) if f > 0 => FlipSequence::Flip1(f - 1),
+                FlipSequence::Flip2(f) if f > 0 => FlipSequence::Flip2(f - 1),
+                FlipSequence::Flip3(f) if f > 0 => FlipSequence::Flip3(f - 1),
+                FlipSequence::Flip4(f) if f > 0 => FlipSequence::Flip4(f - 1),
+                FlipSequence::Flip1(_) => FlipSequence::Flip2(FLIP_FRAMES),
+                FlipSequence::Flip2(_) => FlipSequence::Flip3(FLIP_FRAMES),
+                FlipSequence::Flip3(_) => FlipSequence::Flip4(FLIP_FRAMES),
+                FlipSequence::Flip4(_) => return PlayerState::Downward,
+            }),
             PlayerState::Fallen(_) => PlayerState::Sitting(SITTING_FRAMES),
             PlayerState::Sitting(_)
             | PlayerState::Jump(_)

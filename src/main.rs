@@ -14,7 +14,7 @@ use crate::assets::Assets;
 use crate::hud::Hud;
 use crate::map::Map;
 use crate::player::Player;
-use crate::util::vec2_from_angle;
+use crate::util::{angle_from_vec2, vec2_from_angle};
 
 mod assets;
 mod hud;
