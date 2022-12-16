@@ -20,12 +20,10 @@ jobs:
         toolchain: nightly
         override: true
         components: rustfmt, clippy
-    # - name: Run tests
-    #   run: cargo test --verbose
+    - name: Run tests
+      run: cargo test --verbose
     - name: Build
       run: cargo build --release --verbose
-    - name: pwd
-      run: pwd
     - name: GH Release
       uses: softprops/action-gh-release@v1
       with:
