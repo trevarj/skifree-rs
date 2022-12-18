@@ -1,7 +1,4 @@
-use std::rc::Rc;
-
-use ggez::glam::Vec2;
-use ggez::graphics::{Canvas, Color, DrawParam, Text};
+use ggez::graphics::Canvas;
 use ggez::Context;
 use rand::rngs::OsRng;
 use rand::Rng;
@@ -26,6 +23,7 @@ const LIFT_X_POS: f32 = 100.;
 const LIFT_Y_START: i32 = 100;
 
 mod objects;
+mod slalom;
 
 pub struct Map {
     objects: Vec<Object>,
