@@ -8,7 +8,7 @@ on:
       - "build.rs"
   pull_request:
     branches: [ "master" ]
-   paths:
+    paths:
      - "src/**"
      - "build.rs"
 
