@@ -17,7 +17,6 @@ env:
 
 jobs:
   build-linux:
-
     runs-on: ubuntu-latest
 
     steps:
@@ -40,7 +39,6 @@ jobs:
       run: cargo test --verbose
   
   build-windows:
-
     runs-on: windows-latest
 
     steps:
@@ -53,3 +51,21 @@ jobs:
         components: rustfmt, clippy
     - name: Build
       run: cargo build --verbose
+
+  build-mac:
+    runs-on: macos-latest 
+
+    steps:
+    - uses: actions/checkout@v3
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        components: rustfmt, clippy
+    - name: Install M1 target
+      run: rustup target add aarch64-apple-darwin
+    - name: Build x86
+      run: cargo build --verbose
+    - name: Build m1
+      run: cargo build --target aarch64-apple-darwin --verbose
