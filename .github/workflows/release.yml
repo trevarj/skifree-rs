@@ -43,11 +43,11 @@ jobs:
     - name: Build
       run: cargo build --release --verbose
     - name: Rename artifact
-      run: mv ./target/release/skifree-rs ./target/release/skifree-rs_windows-x86-64.exe
+      run: Rename-Item .\target\release\skifree-rs .\target\release\skifree-rs_windows-x86-64.exe
     - name: GH Release
       uses: softprops/action-gh-release@v1
       with:
-        files: ./target/release/skifree-rs_windows-x86-64.exe
+        files: .\target\release\skifree-rs_windows-x86-64.exe
   release-mac:
     runs-on: macos-latest
     steps:
