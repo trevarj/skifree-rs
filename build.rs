@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::Write;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use quote::__private::TokenStream;
 use quote::{format_ident, quote};
@@ -29,6 +29,10 @@ fn capitalize_first(s: &str) -> String {
         .collect()
 }
 
+fn get_asset_base_dir() -> PathBuf {
+    Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
+}
+
 fn visit_dir(path: &Path) -> (String, TokenStream) {
     let mut fields = vec![];
     let mut defs = vec![];
@@ -51,16 +55,15 @@ fn visit_dir(path: &Path) -> (String, TokenStream) {
                     .trim_end_matches(".png")
                     .to_string()
             );
-            let image_path = entry
-                .path()
+
+            let image_path = get_asset_base_dir()
+                .join(entry.path())
                 .display()
-                .to_string()
-                .trim_start_matches("assets")
                 .to_string();
 
             fields.push(quote! { pub #field_name : std::rc::Rc<ggez::graphics::Image> });
             field_constructors
-                .push(quote! { #field_name: std::rc::Rc::new(ggez::graphics::Image::from_path(ctx, #image_path)?) })
+                .push(quote! { #field_name: std::rc::Rc::new(ggez::graphics::Image::from_bytes(ctx, include_bytes!(#image_path))?) })
         }
     }
     let struct_type = capitalize_first(&path.file_name().unwrap().to_string_lossy());

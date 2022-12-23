@@ -129,7 +129,7 @@ fn main() -> Result<!> {
 
     let (mut ctx, event_loop) = ContextBuilder::new("skifree-rs", "trevarj")
         .add_resource_path(resource_dir)
-        .window_setup(WindowSetup::default().title("SkiFree").icon("/icon.png"))
+        .window_setup(WindowSetup::default().title("SkiFree"))
         .window_mode(
             WindowMode::default()
                 .resizable(false)
