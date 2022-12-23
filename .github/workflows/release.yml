@@ -24,7 +24,9 @@ jobs:
       run: cargo test --verbose
     - name: Build
       run: cargo build --release --verbose
+    - name: Rename artifact
+      run: mv ./target/release/skifree-rs ./target/release/skifree-rs_linux-x86-64
     - name: GH Release
       uses: softprops/action-gh-release@v1
       with:
-        files: ./target/release/skifree-rs
+        files: ./target/release/skifree-rs_linux-x86-64
