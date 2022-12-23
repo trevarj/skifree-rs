@@ -8,7 +8,7 @@ env:
   CARGO_TERM_COLOR: always
 
 jobs:
-  release:
+  release-linux:
     runs-on: ubuntu-latest
     steps:
     - uses: actions/checkout@v2
@@ -24,7 +24,53 @@ jobs:
       run: cargo test --verbose
     - name: Build
       run: cargo build --release --verbose
+    - name: Rename artifact
+      run: mv ./target/release/skifree-rs ./target/release/skifree-rs_linux-x86-64
     - name: GH Release
       uses: softprops/action-gh-release@v1
       with:
-        files: ./target/release/skifree-rs
+        files: ./target/release/skifree-rs_linux-x86-64
+  release-windows:
+    runs-on: windows-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        components: rustfmt, clippy
+    - name: Build
+      run: cargo build --release --verbose
+    - name: Rename artifact
+      run: mv ./target/release/skifree-rs ./target/release/skifree-rs_windows-x86-64.exe
+    - name: GH Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: ./target/release/skifree-rs_windows-x86-64.exe
+  release-mac:
+    runs-on: macos-latest
+    steps:
+    - uses: actions/checkout@v2
+    - name: Install latest nightly
+      uses: actions-rs/toolchain@v1
+      with:
+        toolchain: nightly
+        override: true
+        components: rustfmt, clippy
+    - name: Install M1 target
+      run: rustup target add aarch64-apple-darwin
+    - name: Build
+      run: cargo build --release --verbose
+    - name: Build m1
+      run: cargo build --release --target aarch64-apple-darwin --verbose
+    - name: Rename artifact
+      run: mv ./target/release/skifree-rs ./target/release/skifree-rs_mac-x86-64
+    - name: Rename artifact m1
+      run: mv ./target/aarch64-apple-darwin/release/skifree-rs ./target/aarch64-apple-darwin/release/skifree-rs_mac-m1
+    - name: GH Release
+      uses: softprops/action-gh-release@v1
+      with:
+        files: |
+          ./target/release/skifree-rs_mac-x86-64
+          ./target/aarch64-apple-darwin/release/skifree-rs_mac-m1
