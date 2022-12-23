@@ -45,8 +45,6 @@ jobs:
 
     steps:
     - uses: actions/checkout@v3
-    - name: Install alsa
-      run: sudo apt-get install alsa-base libasound2-dev libudev-dev
     - name: Install latest nightly
       uses: actions-rs/toolchain@v1
       with:
