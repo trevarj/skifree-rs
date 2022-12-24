@@ -1,6 +1,6 @@
 use std::fs::File;
 use std::io::Write;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
 use quote::__private::TokenStream;
 use quote::{format_ident, quote};
@@ -18,6 +18,11 @@ fn main() {
     // println!("cargo:warning={:#}", assets_struct.to_string());
 
     assets_file.write_all(b"// @generated\n\n").unwrap();
+    assets_file.write_all(
+        quote! { static PROJECT_DIR: include_dir::Dir =  include_dir::include_dir!("$CARGO_MANIFEST_DIR/assets"); }
+        .to_string()
+        .as_bytes(),
+    ).unwrap();
     assets_file
         .write_all(assets_struct.to_string().as_bytes())
         .expect("error writing struct to assets.rs file");
@@ -27,10 +32,6 @@ fn capitalize_first(s: &str) -> String {
     s.char_indices()
         .map(|(i, c)| if i == 0 { c.to_ascii_uppercase() } else { c })
         .collect()
-}
-
-fn get_asset_base_dir() -> PathBuf {
-    Path::new(env!("CARGO_MANIFEST_DIR")).to_path_buf()
 }
 
 fn visit_dir(path: &Path) -> (String, TokenStream) {
@@ -56,14 +57,16 @@ fn visit_dir(path: &Path) -> (String, TokenStream) {
                     .to_string()
             );
 
-            let image_path = get_asset_base_dir()
-                .join(entry.path())
+            let image_path = entry
+                .path()
                 .display()
+                .to_string()
+                .trim_start_matches("assets/")
                 .to_string();
 
             fields.push(quote! { pub #field_name : std::rc::Rc<ggez::graphics::Image> });
             field_constructors
-                .push(quote! { #field_name: std::rc::Rc::new(ggez::graphics::Image::from_bytes(ctx, include_bytes!(#image_path))?) })
+                .push(quote! { #field_name: std::rc::Rc::new(ggez::graphics::Image::from_bytes(ctx, PROJECT_DIR.get_file(#image_path).unwrap().contents())?) })
         }
     }
     let struct_type = capitalize_first(&path.file_name().unwrap().to_string_lossy());
