@@ -1,3 +1,4 @@
+[![Build](https://github.com/trevarj/skifree-rs/actions/workflows/build.yml/badge.svg)](https://github.com/trevarj/skifree-rs/actions/workflows/build.yml)
 # ⛷️ skifree-rs
 
 A SkiFree clone written in Rust using the ggez game engine
