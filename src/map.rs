@@ -1,8 +1,9 @@
-use ggez::graphics::Canvas;
+use ggez::graphics::{Canvas, Color, DrawParam, Mesh};
 use ggez::Context;
 use rand::rngs::OsRng;
 use rand::Rng;
 
+use self::objects::{LineObject, Shift};
 use crate::assets::Assets;
 use crate::map::objects::Object;
 use crate::player::{CollisionAction, Player};
@@ -27,6 +28,7 @@ mod slalom;
 
 pub struct Map {
     objects: Vec<Object>,
+    lines: Vec<LineObject>,
     rng: OsRng,
     y_distance: f32,
 }
@@ -40,8 +42,29 @@ impl Map {
         objects.extend(freestyle_course(assets, &mut rng));
         objects.extend(tree_slalom_course(assets, &mut rng));
         objects.extend(ski_lift(assets));
+
+        let lines = vec![
+            // Ski lift lines
+            LineObject::new(
+                [
+                    [LIFT_X_POS, 0 as f32].into(),
+                    [LIFT_X_POS, MAP_HEIGHT as f32].into(),
+                ],
+                1.,
+                Color::BLACK,
+            ),
+            LineObject::new(
+                [
+                    [LIFT_X_POS + 25., 0 as f32].into(),
+                    [LIFT_X_POS + 25., MAP_HEIGHT as f32].into(),
+                ],
+                1.,
+                Color::BLACK,
+            ),
+        ];
         Self {
             objects,
+            lines,
             rng,
             y_distance: 0.,
         }
@@ -60,19 +83,24 @@ impl Map {
     }
 
     pub fn update(&mut self, assets: &Assets, player: &Player) {
+        let player_movement = player.opposite_direction().map(|d| (d, player.speed()));
         // move everything in relation to the given movement_direction
         // while checking which objects need to be cleared off top of screen
         self.objects.retain_mut(|o| {
             if o.position.y < -50. {
                 return false;
-            } else if let Some((direction, magnitude)) =
-                player.opposite_direction().map(|d| (d, player.speed()))
-            {
+            } else if let Some((direction, magnitude)) = player_movement {
                 o.shift(direction, magnitude);
             }
             o.apply_movement();
             true
         });
+
+        for line in &mut self.lines {
+            if let Some((direction, magnitude)) = player_movement {
+                line.shift(direction, magnitude);
+            }
+        }
 
         if let Some(direction) = player.direction() {
             self.y_distance += vec2_from_angle(direction).y;
@@ -89,6 +117,10 @@ impl Map {
             #[cfg(debug_assertions)]
             draw_hitbox(ctx, canvas, o.hitbox());
             canvas.draw(o.image.as_ref(), o.position);
+        }
+
+        for line in &self.lines {
+            line.draw(ctx, canvas);
         }
     }
 
