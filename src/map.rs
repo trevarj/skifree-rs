@@ -51,7 +51,7 @@ impl Map {
                     [LIFT_X_POS, MAP_HEIGHT as f32].into(),
                 ],
                 1.,
-                Color::BLACK,
+                (0.9, 0.9, 0.9).into(),
             ),
             LineObject::new(
                 [
@@ -59,7 +59,7 @@ impl Map {
                     [LIFT_X_POS + 25., MAP_HEIGHT as f32].into(),
                 ],
                 1.,
-                Color::BLACK,
+                (0.9, 0.9, 0.9).into(),
             ),
         ];
         Self {
