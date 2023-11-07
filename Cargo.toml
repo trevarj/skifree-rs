@@ -10,9 +10,9 @@ opt-level = 1
 
 [dependencies]
 anyhow = "1"
-ggez = { version = "0.8.1", default-features = false }
+ggez = { version = "0.9.3", default-features = false }
 rand = "0.8.5"
 
 [build-dependencies]
-ggez = "0.8.1"
+ggez = "0.9.3"
 quote = "1"

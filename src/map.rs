@@ -35,7 +35,7 @@ pub struct Map {
 
 impl Map {
     pub fn new(assets: &Assets) -> Self {
-        let mut rng = OsRng::default();
+        let mut rng = OsRng;
         let mut objects = vec![];
         objects.extend(starting_objects(assets));
         objects.extend(slalom_course(assets, &mut rng));
